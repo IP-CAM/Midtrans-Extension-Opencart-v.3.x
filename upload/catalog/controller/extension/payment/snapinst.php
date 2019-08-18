@@ -17,7 +17,7 @@ status code
 16 voided
 */
 
-
+require_once(dirname(__FILE__) . '/snap_midtrans_version.php');
 require_once(DIR_SYSTEM . 'library/veritrans-php/Veritrans.php');
 
 class ControllerExtensionPaymentSnapinst extends Controller {
@@ -44,7 +44,15 @@ class ControllerExtensionPaymentSnapinst extends Controller {
     $data['text_loading'] = $this->language->get('text_loading');
 
   	$data['process_order'] = $this->url->link('extension/payment/snapinst/process_order');
- 
+
+    $data['opencart_version'] = VERSION;
+    $data['mtplugin_version'] = OC3_MIDTRANS_PLUGIN_VERSION;
+
+    $data['disable_mixpanel'] = $this->config->get('payment_snapinst_mixpanel');
+	  
+    // hpwd
+    //unset($this->session->data['order_id']);	  
+
     return $this->load->view('extension/payment/snapinst', $data);
       
     
@@ -78,7 +86,7 @@ class ControllerExtensionPaymentSnapinst extends Controller {
     $transaction_details['order_id']     = $this->session->data['order_id'];
     $transaction_details['gross_amount'] = $order_info['total'];
 
-    error_log('orderinfo_total = '.$order_info['total']);
+    // error_log('orderinfo_total = '.$order_info['total']);
 
     $billing_address                 = array();
     $billing_address['first_name']   = $order_info['payment_firstname'];
@@ -199,7 +207,7 @@ class ControllerExtensionPaymentSnapinst extends Controller {
       $total_price += $item['price'] * $item['quantity'];
     }
 
-    error_log('total_price = '.$total_price);
+    // error_log('total_price = '.$total_price);
 
     if ($total_price != $transaction_details['gross_amount']) {
       $coupon_item = array(
@@ -212,26 +220,19 @@ class ControllerExtensionPaymentSnapinst extends Controller {
     }
 
     Veritrans_Config::$serverKey = $this->config->get('payment_snapinst_server_key');
-
-    error_log(Veritrans_Config::$serverKey);    
-
-    Veritrans_Config::$isProduction =
-        $this->config->get('payment_snapinst_environment') == 'production'
-        ? true : false;
-
-    error_log($this->config->get('payment_snapinst_environment'));        
-
-    Veritrans_Config::$is3ds = true;
-
+    Veritrans_Config::$isProduction = $this->config->get('payment_snapinst_environment') == 'production' ? true : false;
     Veritrans_Config::$isSanitized = true;
 
-    $credit_card['save_card'] = true;
     $installment = array();
     $installment_term = array();
     
-    $installment_term['bni'] = array(3,6,9,12,18,24,36);
-    $installment_term['mandiri'] = array(3,6,9,12,18,24,36);
-    $installment_term['cimb'] = array(3,6,9,12,18,24,36);
+    $installment_term['bni'] = array(3,6,9,12,15,18,21,24,27,30,33,36);
+    $installment_term['mandiri'] = array(3,6,9,12,15,18,21,24,27,30,33,36);
+    $installment_term['cimb'] = array(3,6,9,12,15,18,21,24,27,30,33,36);
+    $installment_term['bri'] = array(3,6,9,12,15,18,21,24,27,30,33,36);
+    $installment_term['maybank'] = array(3,6,9,12,15,18,21,24,27,30,33,36);
+    $installment_term['bca'] = array(3,6,9,12,15,18,21,24,27,30,33,36);
+    $installment_term['mega'] = array(3,6,9,12,15,18,21,24,27,30,33,36);
 
     $installment['required'] = TRUE;
     $installment['terms'] = $installment_term;    
@@ -243,16 +244,19 @@ class ControllerExtensionPaymentSnapinst extends Controller {
     $payloads['item_details']        = $item_details;
     $payloads['customer_details']    = $customer_details;
     $payloads['enabled_payments']    = array('credit_card');
+    $payloads['credit_card']['secure'] = true;
     
     if ($transaction_details['gross_amount'] >= $this->config->get('payment_snapinst_min_txn')){
       $payloads['credit_card'] = $credit_card;
     }
-  
+
+    if(!empty($this->config->get('payment_snapinst_custom_field1'))){$payloads['custom_field1'] = $this->config->get('payment_snapinst_custom_field1');}
+    if(!empty($this->config->get('payment_snapinst_custom_field2'))){$payloads['custom_field2'] = $this->config->get('payment_snapinst_custom_field2');}
+    if(!empty($this->config->get('payment_snapinst_custom_field3'))){ $payloads['custom_field3'] = $this->config->get('payment_snapinst_custom_field3');}
 
     try {
-      error_log(print_r($payloads,TRUE));
+      // error_log(print_r($payloads,TRUE));
       $snapToken = Veritrans_Snap::getSnapToken($payloads);      
-      
       //$this->response->setOutput($redirUrl);
       $this->response->setOutput($snapToken);
     }

@@ -6,7 +6,7 @@ class ControllerExtensionPaymentSnapio extends Controller {
   public function index() {
     $this->load->language('extension/payment/snapio');
 
-    $this->document->setTitle($this->language->get('heading_title2'));
+    $this->document->setTitle($this->language->get('heading_title'));
 
     $this->load->model('setting/setting');
     $this->load->model('localisation/order_status');
@@ -96,11 +96,13 @@ class ControllerExtensionPaymentSnapio extends Controller {
       'payment_snapio_sort_order',
       'payment_snapio_currency_conversion',
       'payment_snapio_min_txn',
+      'payment_snapio_acq_bank',
+      'payment_snapio_installment_term',
+      'payment_snapio_number',
       'payment_snapio_custom_field1',
       'payment_snapio_custom_field2',
       'payment_snapio_custom_field3',
-      'payment_snapio_status_failure',
-      'payment_snapio_status_success',
+      'payment_snapio_mixpanel',
     );
 
     foreach ($inputs as $input) {
